@@ -61,13 +61,43 @@ In case a client made too many requests within a given time frame, HTTP-Servers 
 
 If no rate limiting is present it can DoS attacks and mass email load on servers.
 
+Steps To Reproduce The Issue
+
+Step 1- Go To password forgot page and enter Email,  Click On Forget Password
+
+Step 2- Intercept This Request In Burp And Forward It In To Intruder
+
+Step 3- Now Send Request To Intruder And Repeat It 100 Time By Fixing Any Arbitrary Payload. For example choose:  Accept-Language: en-US,en;q=0.$5$
+
+Step 4 - See You Will 20+ Email In Your INBOX which can become 100+ depending on payload.
+
+
 ## Cross Origin Resource Sharing Misconfiguration
 
 An HTML5 cross-origin resource sharing (CORS) policy controls whether and how content running on other domains can perform two-way interaction with the domain that publishes the policy. The policy is fine-grained and can apply access controls per-request based on the URL and other features of the request.
 Trusting arbitrary origins effectively disables the same-origin policy, allowing two-way interaction by third-party web sites. Unless the response consists only of unprotected public content, this policy is likely to present a security risk.
 If the site specifies the header Access-Control-Allow-Credentials: true, third-party sites may be able to carry out privileged actions and retrieve sensitive information. Even if it does not, attackers may be able to bypass any IP-based access controls by proxying through users' browsers.
 
-Check https://hackerone.com/reports/470298 for implementation.
+Steps:
+1) On sending a GET request, intercept the request using Burp suite.
+2) Add a Origin: exploit.com and forward the request.
+3) In the response header you should see
+   ```
+    Access-Control-Allow-Credentials: true
+    Access-Control-Allow-Origin: exploit.com
+    ```
+4) Exploit it by writing the following code:
+```
+    <html>
+<script>
+var req = new XMLHttpRequest(); req.onload = reqListener; req.open('get','https://victim.com',true); req.withCredentials = true ;req.send('{}'); function reqListener() { alert(this.responseText); };
+</script>
+</html>
+
+```
+
+Attacker would treat many victims to visit attacker's website, if victim is logged in, then his personal information is recorded in attacker's server. Attacker can perform any action in the user's account, bypassing CSRF tokes.
+
 
 ## Open Redirect
 
@@ -118,6 +148,10 @@ IDOR with Reference to Files: Used to access an unauthorized file. For example a
 
 For implementation see https://medium.com/@corneacristian/top-25-idor-bug-bounty-reports-ba8cd59ad331
 
+
+## Disposable Email Addresses
+
+Although this is a very trivial vulnerability it can lead to a load on the server if an attacker uses disposable email addresses to make many fake accouts.
 
 
 
